@@ -11,6 +11,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { AuthScreen } from '../components/AuthScreen';
 import { Button } from '../components/Button';
 import { Plus, ListFilter, Calendar, LayoutList, History, Timer, CalendarClock, Settings, X, Flag, LogOut, Wallet, Clock } from 'lucide-react';
+import { taskService } from './services/authService';
 
 const SlothIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -20,6 +21,9 @@ const SlothIcon = ({ size = 24, className = "" }: { size?: number, className?: s
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+  setIsLoading(false);
+}, []);
   const [user, setUser] = useState<User | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -39,40 +43,47 @@ const App: React.FC = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  useEffect(() => { document.title = "SlothOrganize"; }, []);
+ useEffect(() => {
+  if (!user) return;
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const currentUser = await authService.getCurrentUser();
-      if (currentUser) setUser(currentUser);
-      setIsLoading(false);
-    };
-    checkSession();
-  }, []);
+  localStorage.setItem(
+    `taskflow_finance_${user.id}`,
+    JSON.stringify(transactions)
+  );
 
-  useEffect(() => {
-    if (!user) return;
-    const userKey = `taskflow_data_${user.id}`;
-    const financeKey = `taskflow_finance_${user.id}`;
-    const saved = localStorage.getItem(userKey);
-    const savedFinance = localStorage.getItem(financeKey);
-    
-    if (saved) { try { setTasks(JSON.parse(saved)); } catch { setTasks([]); } } else { setTasks([]); }
-    if (savedFinance) { try { setTransactions(JSON.parse(savedFinance)); } catch { setTransactions([]); } } else { setTransactions([]); }
+  localStorage.setItem(
+    `sloth_settings_${user.id}`,
+    JSON.stringify({
+      soundEnabled,
+      notificationsEnabled
+    })
+  );
+}, [transactions, soundEnabled, notificationsEnabled, user]);
 
-    const settingsKey = `sloth_settings_${user.id}`;
-    const savedSettings = localStorage.getItem(settingsKey);
-    if (savedSettings) {
-      try { const s = JSON.parse(savedSettings); setSoundEnabled(s.soundEnabled ?? true); setNotificationsEnabled(s.notificationsEnabled ?? false); } catch {}
+
+// NOVO useEffect
+useEffect(() => {
+  if (!user) return;
+
+  async function loadTasks() {
+
+      const userId = user!.id;
+
+    try {
+      const tasks = await taskService.getTasks(userId);
+
+      console.log("Tasks carregadas:", tasks);
+
+      setTasks(tasks);
+    } catch (error) {
+      console.error("Erro ao carregar tasks:", error);
     }
-  }, [user]);
+  }
 
-  useEffect(() => {
-    if (!user) return;
-    localStorage.setItem(`taskflow_data_${user.id}`, JSON.stringify(tasks));
-    localStorage.setItem(`taskflow_finance_${user.id}`, JSON.stringify(transactions));
-    localStorage.setItem(`sloth_settings_${user.id}`, JSON.stringify({ soundEnabled, notificationsEnabled }));
-  }, [tasks, transactions, soundEnabled, notificationsEnabled, user]);
+  loadTasks();
+}, [user]);
+
+
 
   const handleLogout = () => { if (window.confirm("Sair?")) { authService.logout(); setUser(null); setTasks([]); setTransactions([]); setActiveView('tasks'); } };
   const uniqueCategories = useMemo(() => Array.from(new Set(tasks.map(t => t.category).filter((c): c is string => Boolean(c)))), [tasks]);
