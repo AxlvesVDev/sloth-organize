@@ -1,5 +1,6 @@
 node_modules/g
 backend/node_modules
+.env
 
 # Logs
 logs

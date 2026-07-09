@@ -13,6 +13,7 @@ import { Button } from '../components/Button';
 import { Plus, ListFilter, Calendar, LayoutList, History, Timer, CalendarClock, Settings, X, Flag, LogOut, Wallet, Clock } from 'lucide-react';
 import { taskService } from './services/authService';
 
+
 const SlothIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M2 6h20" className="opacity-70" /><path d="M7 6v4a3 3 0 0 0 3 3" /><path d="M17 6v4a3 3 0 0 1-3 3" /><path d="M10 13h4" /><path d="M12 21a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" /><path d="M10 16h.01" /><path d="M14 16h.01" /><path d="M11 18c.5.5 1.5.5 2 0" />
@@ -114,7 +115,32 @@ useEffect(() => {
   const updateTask = (id: string, newTitle: string, newDate?: number, newPriority?: Priority, newCategory?: string, newTime?: string, newDuration?: number) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, title: newTitle, dueDate: newDate ?? t.dueDate, priority: newPriority ?? t.priority, category: newCategory ?? t.category, dueTime: newTime ?? t.dueTime, duration: newDuration ?? t.duration } : t));
   };
-  const toggleTask = (id: string) => setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed, completedAt: !t.completed ? Date.now() : undefined } : t));
+  
+  
+const toggleTask = async (id: string) => {
+  try {
+
+    const task = tasks.find(t => t.id === id);
+
+    if (!task) return;
+
+    const updatedTask = await taskService.updateTask(id, {
+      completed: !task.completed
+    });
+
+    setTasks(prev =>
+      prev.map(t =>
+        t.id === id ? updatedTask : t
+      )
+    );
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+  
+  
+  
   const snoozeTask = (id: string) => setTasks(prev => prev.map(t => { if (t.id !== id) return t; const d = t.dueDate ? new Date(t.dueDate) : new Date(); d.setDate(d.getDate()+1); return { ...t, dueDate: d.getTime() }; }));
   const deleteTask = (id: string) => setTasks(prev => prev.filter(t => t.id !== id));
   

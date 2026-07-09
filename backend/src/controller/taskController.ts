@@ -45,8 +45,20 @@ export async function getTasks(req: Request, res: Response) {
 }
 
 
+//delete task (metodo delete)
+export async function deleteTask(req: Request, res: Response) {
+  const { id } = req.params;
 
-//updatetask (metodo put)
+  await prisma.task.delete({
+    where: {
+      id
+    }
+  });
+
+  res.status(204).send();
+}
+
+//completed task (metodo patch)
 export async function updateTask(req: Request, res: Response) {
   const { id } = req.params;
 
@@ -67,42 +79,10 @@ export async function updateTask(req: Request, res: Response) {
       title,
       priority,
       completed,
+      completedAt: completed ? new Date() : null,
       dueDate,
       dueTime,
       duration
-    }
-  });
-
-  res.json(task);
-}
-
-//delete task (metodo delete)
-export async function deleteTask(req: Request, res: Response) {
-  const { id } = req.params;
-
-  await prisma.task.delete({
-    where: {
-      id
-    }
-  });
-
-  res.status(204).send();
-}
-
-//completed task (metodo patch)
-export async function completeTask(
-  req: Request,
-  res: Response
-) {
-  const { id } = req.params;
-
-  const task = await prisma.task.update({
-    where: {
-      id
-    },
-    data: {
-      completed: true,
-      completedAt: new Date()
     }
   });
 
