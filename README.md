@@ -8,7 +8,9 @@ O objetivo do projeto é centralizar em um único ambiente ferramentas que auxil
 
 ## 📸 Preview
 
-![SlothOrganize](../SlothOrganize-main/backend/src/assets/image.png)
+![SlothOrganize]
+<img width="1511" height="802" alt="Captura de tela 2026-06-04 224836" src="https://github.com/user-attachments/assets/10fe283a-dbf6-4db0-b31c-e1066ab2d796" />
+
 
 ---
 
