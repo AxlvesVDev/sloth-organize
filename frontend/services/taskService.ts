@@ -15,9 +15,9 @@ export const taskService = {
     const response = await fetch(`${API_URL}/tasks/${id}`, {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -29,11 +29,27 @@ export const taskService = {
 
   async deleteTask(id: string) {
     const response = await fetch(`${API_URL}/tasks/${id}`, {
-      method: "DELETE"
+      method: "DELETE",
     });
 
     if (!response.ok) {
-      throw new Error("Erro ao excluir tarefa");
+      throw new Error("Erro ao deletar tarefa");
     }
+  },
+
+  async createTask(data: any) {
+  const response = await fetch(`${API_URL}/tasks`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erro ao criar tarefa");
   }
+
+  return response.json();
+},
 };

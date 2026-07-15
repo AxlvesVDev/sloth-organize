@@ -11,7 +11,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { AuthScreen } from '../components/AuthScreen';
 import { Button } from '../components/Button';
 import { Plus, ListFilter, Calendar, LayoutList, History, Timer, CalendarClock, Settings, X, Flag, LogOut, Wallet, Clock } from 'lucide-react';
-import { taskService } from './services/authService';
+import { taskService } from './services/taskService';
 
 
 const SlothIcon = ({ size = 24, className = "" }: { size?: number, className?: string }) => (
@@ -89,33 +89,69 @@ useEffect(() => {
   const handleLogout = () => { if (window.confirm("Sair?")) { authService.logout(); setUser(null); setTasks([]); setTransactions([]); setActiveView('tasks'); } };
   const uniqueCategories = useMemo(() => Array.from(new Set(tasks.map(t => t.category).filter((c): c is string => Boolean(c)))), [tasks]);
 
-  const addTask = (e?: React.FormEvent, customDate?: Date, titleOverride?: string) => {
-    if (e) e.preventDefault();
-    const titleToUse = titleOverride || newTaskTitle;
-    if (!titleToUse.trim()) return;
+ const addTask = async (
+  e?: React.FormEvent,
+  customDate?: Date,
+  titleOverride?: string
+) => {
+  if (e) e.preventDefault();
 
-    let finalDueDate = Date.now();
-    if (customDate) finalDueDate = customDate.getTime();
-    else if (newTaskDate) {
-       const parts = newTaskDate.split('-');
-       finalDueDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0).getTime();
+  const titleToUse = titleOverride || newTaskTitle;
+
+  if (!titleToUse.trim() || !user) return;
+
+  let finalDueDate = Date.now();
+
+  if (customDate) {
+    finalDueDate = customDate.getTime();
+  } else if (newTaskDate) {
+    const parts = newTaskDate.split("-");
+
+    finalDueDate = new Date(
+      parseInt(parts[0]),
+      parseInt(parts[1]) - 1,
+      parseInt(parts[2]),
+      12,
+      0,
+      0
+    ).getTime();
+  }
+
+  try {
+    const task = await taskService.createTask({
+      title: titleToUse.trim(),
+      priority: newTaskPriority,
+      dueDate: finalDueDate,
+      dueTime: newTaskTime || null,
+      duration: newTaskDuration
+        ? parseInt(newTaskDuration)
+        : null,
+      userId: user.id,
+    });
+
+    setTasks(prev => [task, ...prev]);
+
+    if (!titleOverride) {
+      setNewTaskTitle("");
+      setNewTaskDate("");
+      setNewTaskTime("");
+      setNewTaskDuration("");
+      setNewTaskPriority(Priority.Medium);
     }
 
-    const newTask: Task = {
-      id: crypto.randomUUID(), title: titleToUse.trim(), priority: newTaskPriority, completed: false, createdAt: Date.now(), dueDate: finalDueDate, dueTime: newTaskTime || undefined, duration: newTaskDuration ? parseInt(newTaskDuration) : undefined, subtasks: []
-    };
-
-    setTasks(prev => [newTask, ...prev]);
-    if (!titleOverride) { setNewTaskTitle(''); setNewTaskDate(''); setNewTaskTime(''); setNewTaskDuration(''); setNewTaskPriority(Priority.Medium); }
-  };
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => setTransactions(prev => [...prev, { ...t, id: crypto.randomUUID() }]);
   const deleteTransaction = (id: string) => setTransactions(prev => prev.filter(t => t.id !== id));
 
-  const updateTask = (id: string, newTitle: string, newDate?: number, newPriority?: Priority, newCategory?: string, newTime?: string, newDuration?: number) => {
+ const updateTask = (id: string, newTitle: string, newDate?: number, newPriority?: Priority, newCategory?: string, newTime?: string, newDuration?: number) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, title: newTitle, dueDate: newDate ?? t.dueDate, priority: newPriority ?? t.priority, category: newCategory ?? t.category, dueTime: newTime ?? t.dueTime, duration: newDuration ?? t.duration } : t));
   };
   
+  console.log(taskService);
   
 const toggleTask = async (id: string) => {
   try {
@@ -124,10 +160,15 @@ const toggleTask = async (id: string) => {
 
     if (!task) return;
 
+    console.log("taskService:", taskService);
+console.log("updateTask:", taskService.updateTask);
+console.log(typeof taskService.updateTask);
+
     const updatedTask = await taskService.updateTask(id, {
       completed: !task.completed
     });
 
+    
     setTasks(prev =>
       prev.map(t =>
         t.id === id ? updatedTask : t

@@ -13,16 +13,16 @@ export async function createTask(req: Request, res: Response) {
   
   
 
-  const task = await prisma.task.create({
-    data: {
-      title,
-      priority,
-      dueDate,
-      dueTime,
-      duration,
-      userId
-    }
-  });
+const task = await prisma.task.create({
+  data: {
+    title,
+    priority,
+    dueDate: dueDate ? new Date(dueDate) : null,
+    dueTime,
+    duration,
+    userId
+  }
+});
   
 
 
@@ -80,7 +80,7 @@ export async function updateTask(req: Request, res: Response) {
       priority,
       completed,
       completedAt: completed ? new Date() : null,
-      dueDate,
+       dueDate: dueDate ? new Date(dueDate) : null,
       dueTime,
       duration
     }
